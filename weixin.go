@@ -89,6 +89,7 @@ const (
 	weixinMaterialURL        = "https://api.weixin.qq.com/cgi-bin/material"
 	weixinShortURL           = "https://api.weixin.qq.com/cgi-bin/shorturl"
 	weixinUserInfo           = "https://api.weixin.qq.com/cgi-bin/user/info"
+	weixinSnsUserInfo        = "https://api.weixin.qq.com/sns/userinfo"
 	weixinFileURL            = "http://file.api.weixin.qq.com/cgi-bin/media"
 	weixinTemplate           = "https://api.weixin.qq.com/cgi-bin/template"
 	weixinRedirectURL        = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s#wechat_redirect"
@@ -783,6 +784,24 @@ func (wx *Weixin) GetUserAccessToken(code string) (*UserAccessToken, error) {
 // GetUserInfo used to get user info
 func (wx *Weixin) GetUserInfo(openid string) (*UserInfo, error) {
 	reply, err := sendGetRequest(fmt.Sprintf("%s?openid=%s&lang=zh_CN&access_token=", weixinUserInfo, openid), wx.tokenChan)
+	if err != nil {
+		return nil, err
+	}
+	var result UserInfo
+	if err := json.Unmarshal(reply, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetSnsUserInfo used to get user info
+func (wx *Weixin) GetSnsUserInfo(openid, accessToken string) (*UserInfo, error) {
+	resp, err := http.Get(fmt.Sprintf("%s?openid=%s&lang=zh_CN&access_token=%s", weixinSnsUserInfo, openid, accessToken))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	reply, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
